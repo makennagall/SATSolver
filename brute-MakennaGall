@@ -1,0 +1,141 @@
+#!/usr/bin/env python3
+# this file is for the brute force SAT Solver
+#Team: Makenna Gall (team of 1)
+import time
+def main():
+    readIn("smallerTest.cnf")
+
+def readIn(filename):
+    readFile = open(filename, 'r')
+    writeFile = open('output.cnf', 'w')
+    Lines = readFile.readlines()
+    clauseList = []
+    for line in Lines:
+        if line.startswith('c'):
+            if bool(clauseList):
+                varDict = {}
+                varDict = createDictionary(numVariables)
+                evaluation = allPossibilities(numVariables, varDict, clauseList)
+                returnedSatisfiability = evaluation[0]
+                numLiterals = evaluation[1]
+                workingString = evaluation[2]
+                timeTaken = evaluation[3]
+                if satisfiability == 'X':
+                        agreement = 0
+                elif not returnedSatisfiability == satisfiability:
+                    agreement = -1
+                else:
+                    agreement = 1
+
+                finalList = [problemNumber, numVariables, numClauses, maxLiterals, numLiterals, returnedSatisfiability, agreement, timeTaken, workingString]
+                writeFile.write(','.join(str(e) for e in finalList))
+                writeFile.write("\n")
+                clauseList = []
+            cItems = line.split()
+            problemNumber = cItems[1]
+            maxLiterals = cItems[2]
+            if len(cItems) >= 4:
+                satisfiability = cItems[3]
+            else:
+                satisfiability = "X"
+            if satisfiability == 'U':
+                print("should be unsatisfiable")
+            else:
+                print("should be satisfiable")
+        #if the list of clauses is not empty, evaluate the clauses:
+        if(line.startswith('p')):
+            elements = line.split()
+            numClauses = int(elements[3])
+            numVariables = int(elements[2])
+        if not line.startswith('c') and not line.startswith('p'):
+            clauseList.append(line)
+    varDict = {}
+    varDict = createDictionary(numVariables)
+    evaluation = allPossibilities(numVariables, varDict, clauseList)
+    returnedSatisfiability = evaluation[0]
+    numLiterals = evaluation[1]
+    workingString = evaluation[2]
+    timeTaken = evaluation[3]
+    if satisfiability == 'X':
+            agreement = 0
+    elif not returnedSatisfiability == satisfiability:
+        agreement = -1
+    else:
+        agreement = 1
+    finalList = [problemNumber, numVariables, numClauses, maxLiterals, numLiterals, returnedSatisfiability, agreement, timeTaken, workingString]
+    writeFile.write(','.join(str(e) for e in finalList))
+    #test of createDictionary, allPossibilities and printDict:
+def createDictionary(numVars):
+    #keys are numbers 1 to the number of vars (representing x1, x2 ... xnumVars)
+    varDict = {}
+    for i in range(1,numVars + 1):
+        #initialize all values to True
+        varDict[i] = True
+    return varDict
+
+
+def allPossibilities(numVars, varDict, clauseList):
+    #range consists of numbers 0 through 2^numVars - 1
+    #iterates 2^numVar times
+    print("evaluating term")
+    startTime = time.time()
+    for i in range(1, pow(2, numVars)+1):
+        #print(i, " : ", end= "")
+        #iterates numVar times
+        for j in range(numVars):
+            if(i%pow(2,j) == 0):
+                if varDict[j+1]:
+                    varDict[j+1] = False
+                else:
+                    varDict[j+1] = True
+        #printVars(numVars, varDict)
+        currEval = evalClauses(numVars, varDict, clauseList)
+        if currEval[0]:
+            print("Satisfiable")
+            printVars(numVars, varDict)
+            endTime = time.time()
+            timeTaken = round((endTime - startTime) * pow(10, 6), 2)
+            return ['S', currEval[1], createReturnList(numVars, varDict), timeTaken]
+    print("Unsatisfiable")
+    endTime = time.time()
+    timeTaken = round((endTime - startTime) * pow(10, 6), 2)
+    return ['U', currEval[1], "", timeTaken]
+
+
+def createReturnList(numVars, varDict):
+    returnString = ""
+    for i in range (1, numVars+1):
+        if varDict[i] == True:
+            returnString += "1"
+        else:
+            returnString += "0"
+    return returnString
+
+def printVars (numVars, varDict):
+    for i in range(1, numVars + 1):
+        #print all values
+        print(i,  varDict[i], end="; ")
+    print()
+
+
+def evalClauses(numVars, varDict, clauseList):
+    literalCounter = 0
+    for clause in clauseList:
+        currClause = False
+        for var in clause.split(',')[:-1]:
+            literalCounter+=1
+            if int(var) < 0:
+                if not varDict[abs(int(var))]:
+                    currClause = True
+            elif int(var) > 0:
+                if varDict[abs(int(var))]:
+                    currClause = True
+
+        if not currClause:
+            #printVars(numVars, varDict)
+            return [False, literalCounter]
+    #printVars(numVars, varDict)
+    return [True, literalCounter]
+
+if __name__ == "__main__":
+    main()
